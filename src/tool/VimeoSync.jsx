@@ -76,7 +76,6 @@ export const VimeoSyncView = (options) => {
             _id: `vimeo-${video.uri.split('/').pop()}`,
             _type: 'vimeo',
             aspectRatio: video.width / video.height,
-            uri: video.uri,
             description: video.description || '',
             duration: video.duration,
             height: video.height,
@@ -84,26 +83,43 @@ export const VimeoSyncView = (options) => {
             name: video.name,
             pictures: addKeys(video.pictures?.sizes || [], 'link'),
             srcset: addKeys(video.files || [], 'md5'),
+            uri: video.uri,
             width: video.width,
           }
-          // const existingThumbnails = await getVideoVersions(video.uri)
-          // if (existingThumbnails?.length) {
-          //   const itemsWithKeys = existingThumbnails.map((item) => {
-          //     const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
-          //     return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
-          //   })
+          const existingThumbnails = await getVideoVersions(video.uri)
+          if (existingThumbnails?.length) {
+            const itemsWithKeys = existingThumbnails.map((item) => {
+              const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
+              return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
+            })
 
-          //   const duration = itemsWithKeys[0]?.sizes[0]?.duration
-          //   const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
+            const duration = itemsWithKeys[0]?.sizes[0]?.duration
+            const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
 
-          //   videoObject.animatedThumbnails = {
-          //     thumbnails: itemsWithKeys,
-          //     startTime,
-          //     duration,
-          //   }
-          // }
+            videoObject.animatedThumbnails = {
+              startTime,
+              duration,
+            }
+          }
 
-          transaction.createOrReplace(videoObject)
+          // Patch to update existing fields (don't overwrite animatedThumbnails)
+          transaction.patch(videoObject._id, {
+            set: {
+              aspectRatio: videoObject.aspectRatio,
+              description: videoObject.description,
+              duration: videoObject.duration,
+              height: videoObject.height,
+              link: videoObject.link,
+              name: videoObject.name,
+              pictures: videoObject.pictures,
+              srcset: videoObject.srcset,
+              width: videoObject.width,
+            },
+          })
+
+          // Use createIfNotExists to handle new documents
+          transaction.createIfNotExists(videoObject)
+
           videosEntry.push(videoObject)
           // 300ms delay to prevent 429 error
           await new Promise((resolve) => setTimeout(resolve, 300))
