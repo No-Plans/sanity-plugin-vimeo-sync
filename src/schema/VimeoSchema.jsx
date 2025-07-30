@@ -40,6 +40,17 @@ export default defineType({
       [],
       'dev-info',
     ),
+    // quickFields(
+    //   'covers',
+    //   'array',
+    //   [
+    //     quickFields('covers', 'object', [
+    //       quickFields('srcset', 'array', [quickFields('vimeoSrcset', 'vimeoSrcset')], []),
+    //       quickFields('pictures', 'array', [quickFields('vimeoPictures', 'vimeoPictures')], []),
+    //     ]),
+    //   ],
+    //   [],
+    // ),
   ],
   preview: {
     select: {

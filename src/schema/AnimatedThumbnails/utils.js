@@ -5,58 +5,46 @@ import {getPluginConfig} from '../../helpers'
 // Please note that you can't create more than four sets of animated thumbnails for the same video.
 // check if the video has already animated thumbnails
 
-export const getExistingVideoThumbnails = async (uri) => {
-  if (!uri) return
+export const getVideoVersions = async (uri) => {
+  //return all versions
   const pluginConfig = getPluginConfig()
   const vimeoAccessToken = pluginConfig?.accessToken
-
-  const res = await fetch(`https://api.vimeo.com${uri}/animated_thumbsets`, {
+  const versions = await fetch(`https://api.vimeo.com${uri}/versions`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${vimeoAccessToken}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
   })
 
-  const apiResponse = await res.json()
-  if (apiResponse.error) {
-    throw new Error(apiResponse.error)
-  }
-
-  if (apiResponse.total > 0) {
-    return apiResponse.data
-  }
-
-  return
+  return await versions.json()
 }
 
-export const deleteExistingVideoThumbnails = async (thumb) => {
+export const updateVersion = async (uri, desc = '', current = true) => {
+  //uri is from a returned version object
   const pluginConfig = getPluginConfig()
   const vimeoAccessToken = pluginConfig?.accessToken
+  const res = await fetch(`https://api.vimeo.com${uri}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${vimeoAccessToken}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      description: desc,
+      is_current: current,
+    }),
+  })
 
-  const thumbsetUri = thumb.uri
-  if (thumbsetUri) {
-    const res = await fetch(`https://api.vimeo.com${thumbsetUri}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${vimeoAccessToken}`,
-      },
-    })
-
-    if (res.ok && res.status === 204) {
-      return {success: true}
-    } else {
-      throw new Error('Error deleting animated thumbnails: ' + res.statusText)
-    }
-  } else {
-    throw new Error('No thumbset URI provided')
-  }
+  return await res.json()
 }
 
-export const createSetOfAnimatedThumbnails = async (uri, duration) => {
+export const setThumbnail = async (uri, time = 0) => {
   const pluginConfig = getPluginConfig()
   const vimeoAccessToken = pluginConfig?.accessToken
-
-  const res = await fetch(`https://api.vimeo.com${uri}/animated_thumbsets`, {
+  const res = await fetch(`https://api.vimeo.com${uri}/pictures`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${vimeoAccessToken}`,
@@ -64,9 +52,35 @@ export const createSetOfAnimatedThumbnails = async (uri, duration) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      duration,
+      active: true,
+      time: time,
+    }),
+  })
+}
+
+export const startTrim = async (uri, start, end) => {
+  const pluginConfig = getPluginConfig()
+  const vimeoAccessToken = pluginConfig?.accessToken
+
+  const res = await fetch(`https://api.vimeo.com${uri}/trim`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${vimeoAccessToken}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      trim_start: start,
+      trim_end: end,
     }),
   })
 
-  return await res.json()
+  const data = await res.json()
+  console.log('data', data)
+  if (data.status === 'OK') {
+    //Trim operation started, start polling for status
+    return data
+  } else {
+    throw new Error(`Error creating cover loop: ${JSON.stringify(data)}`)
+  }
 }

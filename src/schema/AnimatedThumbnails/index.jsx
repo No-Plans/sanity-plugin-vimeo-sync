@@ -6,9 +6,8 @@ import {field} from './field'
 export default defineField({
   type: 'object',
   name: 'animatedThumbnails',
-  title: 'Animated Thumbnails',
-  description:
-    'Each operation may take up to 5 minutes. Please keep the window open and avoid switching projects/entry during this process.',
+  title: 'Cover loop',
+
   components: {
     input,
     field,
@@ -38,7 +37,7 @@ export default defineField({
       description: 'Maximum duration in seconds',
       validation: (Rule) =>
         Rule.min(0)
-          .max(6)
+          .max(15)
           .custom((value, context) => {
             const startTime = context.parent.startTime
             if (startTime + value > context.document?.duration) {
@@ -48,36 +47,36 @@ export default defineField({
           }),
       initialValue: 6,
     },
-    quickFields('thumbnails', 'array', [
-      {
-        type: 'object',
-        name: 'item',
-        fields: [
-          quickFields('status', 'string'),
-          quickFields('clip_uri', 'string'),
-          quickFields('created_on', 'number'),
-          quickFields('sizes', 'array', [
-            {
-              type: 'object',
-              name: 'size',
-              fields: [
-                quickFields('duration', 'number'),
-                quickFields('file_format', 'string'),
-                quickFields('file_size', 'number'),
-                quickFields('height', 'number'),
-                quickFields('width', 'number'),
-                quickFields('is_downloadable', 'boolean'),
-                quickFields('link', 'string'),
-                quickFields('link_with_play_button', 'string'),
-                quickFields('start_time', 'number'),
-                quickFields('uuid', 'string'),
-                quickFields('profile_id', 'string'),
-              ],
-            },
-          ]),
-          quickFields('uri', 'string'),
-        ],
-      },
-    ]),
+    // quickFields('thumbnails', 'array', [
+    //   {
+    //     type: 'object',
+    //     name: 'item',
+    //     fields: [
+    //       quickFields('status', 'string'),
+    //       quickFields('clip_uri', 'string'),
+    //       quickFields('created_on', 'number'),
+    //       quickFields('sizes', 'array', [
+    //         {
+    //           type: 'object',
+    //           name: 'size',
+    //           fields: [
+    //             quickFields('duration', 'number'),
+    //             quickFields('file_format', 'string'),
+    //             quickFields('file_size', 'number'),
+    //             quickFields('height', 'number'),
+    //             quickFields('width', 'number'),
+    //             quickFields('is_downloadable', 'boolean'),
+    //             quickFields('link', 'string'),
+    //             quickFields('link_with_play_button', 'string'),
+    //             quickFields('start_time', 'number'),
+    //             quickFields('uuid', 'string'),
+    //             quickFields('profile_id', 'string'),
+    //           ],
+    //         },
+    //       ]),
+    //       quickFields('uri', 'string'),
+    //     ],
+    //   },
+    // ]),
   ],
 })

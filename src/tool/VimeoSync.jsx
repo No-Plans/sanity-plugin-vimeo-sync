@@ -6,7 +6,7 @@ import {FaVimeoV} from 'react-icons/fa'
 import {MdSync} from 'react-icons/md'
 import {useClient} from 'sanity'
 import {addKeys} from '../helpers'
-import {getExistingVideoThumbnails} from '../schema/AnimatedThumbnails/utils'
+import {getVideoVersions} from '../schema/AnimatedThumbnails/utils'
 
 const namespace = 'vs-plgugin'
 
@@ -82,22 +82,22 @@ export const VimeoSyncView = (options) => {
             srcset: addKeys(video.files || [], 'md5'),
             width: video.width,
           }
-          const existingThumbnails = await getExistingVideoThumbnails(video.uri)
-          if (existingThumbnails?.length) {
-            const itemsWithKeys = existingThumbnails.map((item) => {
-              const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
-              return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
-            })
+          // const existingThumbnails = await getVideoVersions(video.uri)
+          // if (existingThumbnails?.length) {
+          //   const itemsWithKeys = existingThumbnails.map((item) => {
+          //     const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
+          //     return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
+          //   })
 
-            const duration = itemsWithKeys[0]?.sizes[0]?.duration
-            const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
+          //   const duration = itemsWithKeys[0]?.sizes[0]?.duration
+          //   const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
 
-            videoObject.animatedThumbnails = {
-              thumbnails: itemsWithKeys,
-              startTime,
-              duration,
-            }
-          }
+          //   videoObject.animatedThumbnails = {
+          //     thumbnails: itemsWithKeys,
+          //     startTime,
+          //     duration,
+          //   }
+          // }
 
           transaction.createOrReplace(videoObject)
           videosEntry.push(videoObject)

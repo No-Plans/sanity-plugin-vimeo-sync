@@ -1,3 +1,4 @@
+import {useRef, useEffect, useCallback} from 'react'
 import {GenerateIcon} from '@sanity/icons'
 import {Button, Card, Flex, Grid, Spinner, Text} from '@sanity/ui'
 import {MemberField, set, useClient, useFormValue} from 'sanity'
@@ -19,8 +20,10 @@ export function input(props) {
   const documentId = useFormValue(['_id'])
   const client = useClient({apiVersion: '1'})
   const thumbnails = useFormValue(['animatedThumbnails'])
+  const srcset = useFormValue(['srcset'])
+  const preview = srcset.find((item) => item.rendition === '540p')
 
-  const {status, items, generateThumbs, deleteThumbs} = useAnimatedThumbs(videoUri, thumbnails)
+  const {status, generateCoverLoop} = useAnimatedThumbs(videoUri, thumbnails)
 
   const startTimeMember = members.find(
     (member) => member.kind === 'field' && member.name === 'startTime',
@@ -31,24 +34,22 @@ export function input(props) {
 
   const handleGenerate = async () => {
     onChange([set([], ['thumbnails'])])
-    const generatedItems = await generateThumbs()
-    const itemsWithKeys = generatedItems.map((item) => {
-      const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
-      return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
-    })
+    const start = startTimeMember.field.value
+    const duration = durationMember.field.value
+    const generatedItems = await generateCoverLoop(start, start + duration)
+    console.log('generated items', generatedItems)
+    // const itemsWithKeys = generatedItems.map((item) => {
+    //   const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
+    //   return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
+    // })
 
-    const duration = itemsWithKeys[0]?.sizes[0]?.duration
-    const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
-    onChange([
-      set(itemsWithKeys, ['thumbnails']),
-      set(duration, ['duration']),
-      set(startTime, ['startTime']),
-    ])
-  }
-
-  const handleDelete = async () => {
-    await deleteThumbs()
-    onChange([set([], ['thumbnails'])])
+    // const duration = itemsWithKeys[0]?.sizes[0]?.duration
+    // const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
+    // onChange([
+    //   set(itemsWithKeys, ['thumbnails']),
+    //   set(duration, ['duration']),
+    //   set(startTime, ['startTime']),
+    // ])
   }
 
   const renderButton = () => {
@@ -66,21 +67,11 @@ export function input(props) {
           </Card>
         )
       case 'success':
-      case 'already-generated':
-        return (
-          <Button
-            icon={GenerateIcon}
-            tone="critical"
-            text="Delete existing Thumbnails"
-            onClick={handleDelete}
-            disabled={status.type === 'loading'}
-          />
-        )
       default:
         return (
           <Button
             icon={GenerateIcon}
-            text="Generate animated Thumbnails"
+            text="Update Vimeo Thumbnail"
             onClick={handleGenerate}
             disabled={status.type === 'loading' || status.type === 'error'}
           />
@@ -88,9 +79,56 @@ export function input(props) {
     }
   }
 
+  const renderVideo = () => {
+    const videoRef = useRef(null)
+    useEffect(() => {
+      const start = startTimeMember.field.value
+      const end = durationMember.field.value + startTimeMember.field.value
+      const video = document.querySelector('video')
+      if (videoRef.current) {
+        if (start + end > 0) {
+          videoRef.current.currentTime = start
+          videoRef.current.play()
+        } else {
+          videoRef.current.currentTime = 0
+          videoRef.current.pause()
+        }
+      } else {
+        console.log('no video ref')
+      }
+    }, [startTimeMember.field.value, durationMember.field.value, videoRef])
+
+    const handleTimeUpdate = useCallback(
+      (e) => {
+        const start = startTimeMember.field.value
+        const end = durationMember.field.value + start
+        if (videoRef.current.currentTime > end) {
+          videoRef.current.currentTime = start
+        }
+      },
+      [startTimeMember, durationMember],
+    )
+
+    return (
+      <video
+        ref={videoRef}
+        src={preview.link}
+        muted
+        style={{
+          width: '100%',
+          height: 'auto',
+          maxHeight: '50vh',
+          aspectRatio: preview.width / preview.height,
+        }}
+        onTimeUpdate={handleTimeUpdate}
+      />
+    )
+  }
+
   return (
     <>
       <Card>
+        <Flex>{renderVideo()}</Flex>
         <Grid columns={2} gap={3} paddingBottom={3}>
           {startTimeMember && (
             <MemberField
