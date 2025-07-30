@@ -10,7 +10,7 @@ export const useAnimatedThumbs = (uri, field) => {
   const [attempt, setAttempt] = useState(0)
   const generateCoverLoop = async (start, end) => {
     setAttempt(0)
-    // setStatus({type: 'loading', message: 'Beginning trim operation...'})
+    setStatus({type: 'loading', message: 'Generating thumbnail...'})
 
     try {
       if (!uri) {
