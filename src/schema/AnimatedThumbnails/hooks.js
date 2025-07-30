@@ -17,13 +17,13 @@ export const useAnimatedThumbs = (uri, field) => {
         throw new Error('No video URI provided')
       }
 
-      //get all current versions
+      // //get all current versions
       // const versions = await getVideoVersions(uri)
       // const current = versions.data.find((version) => version.active)
       // const existingCovers = versions.data.filter((version) => version.description === 'cover-loop')
       // const count = versions.total
 
-      //start trim operation
+      // //start trim operation
       // try {
       //   await startTrim(uri, start, end)
       // } catch (e) {
@@ -32,7 +32,7 @@ export const useAnimatedThumbs = (uri, field) => {
       const thumbnail = await setThumbnail(uri, start)
       setStatus({type: 'success', message: 'Thumbnail updated'})
 
-      //begin polling for updated versions
+      // //begin polling for updated versions
       // const loadedVersions = await new Promise((resolve) => {
       //   setStatus({type: 'loading', message: 'Video trimming... do not close this window'})
       //   const interval = setInterval(async () => {
