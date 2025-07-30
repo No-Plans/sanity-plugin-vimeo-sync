@@ -1,6 +1,6 @@
 {
-  "name": "sanity-plugin-vimeo-sync",
-  "version": "1.4.1",
+  "name": "sanity-plugin-np-vimeo-sync",
+  "version": "1.0",
   "description": "Sync Vimeo PRO videos into Sanity",
   "keywords": [
     "sanity",
@@ -43,6 +43,7 @@
     "prepublishOnly": "npm run build",
     "watch": "pkg-utils watch --strict"
   },
+  "browserslist": "extends @sanity/browserslist-config",
   "dependencies": {
     "@sanity/color": "^3.0.6",
     "@sanity/icons": "^3.7.4",
@@ -87,7 +88,6 @@
       "yarn"
     ]
   },
-  "browserslist": "extends @sanity/browserslist-config",
   "sanityPlugin": {
     "verifyPackage": {
       "eslintImports": false
