@@ -1,7 +1,11 @@
 import {useRef, useEffect, useCallback} from 'react'
 import {GenerateIcon} from '@sanity/icons'
+import {useSecrets} from '@sanity/studio-secrets'
 import {Button, Card, Flex, Grid, Spinner, Text} from '@sanity/ui'
-import {MemberField, set, useClient, useFormValue} from 'sanity'
+import {useEffect} from 'react'
+import {MemberField, set, useFormValue} from 'sanity'
+import {namespace} from '../../constants'
+import {setPluginConfig} from '../../helpers'
 import {useAnimatedThumbs} from './hooks'
 
 export function input(props) {
@@ -16,9 +20,19 @@ export function input(props) {
     renderDefault,
   } = props
 
+  const {secrets, loading} = useSecrets(namespace)
+
+  useEffect(() => {
+    if (!secrets?.apiKey && !loading) {
+      console.error('Vimeo access token is not set. Please set it in the Studio Secrets.')
+    } else if (secrets?.apiKey) {
+      setPluginConfig({
+        accessToken: secrets.apiKey,
+      })
+    }
+  }, [secrets, loading])
+
   const videoUri = useFormValue(['uri'])
-  const documentId = useFormValue(['_id'])
-  const client = useClient({apiVersion: '1'})
   const thumbnails = useFormValue(['animatedThumbnails'])
   const srcset = useFormValue(['srcset'])
   const preview = srcset.find((item) => item.rendition === '540p')
@@ -31,6 +45,17 @@ export function input(props) {
   const durationMember = members.find(
     (member) => member.kind === 'field' && member.name === 'duration',
   )
+
+  useEffect(() => {
+    if (items?.length) {
+      // set startTime and duration as the first item's values
+      const firstItem = items[0]
+      if (!firstItem?.sizes?.length) return
+
+      onChange(set(firstItem.sizes[0].start_time, ['startTime']))
+      onChange(set(firstItem.sizes[0].duration, ['duration']))
+    }
+  }, [items])
 
   const handleGenerate = async () => {
     onChange([set([], ['thumbnails'])])
@@ -68,12 +93,16 @@ export function input(props) {
         )
       case 'success':
       default:
+        const isInvalid =
+          startTimeMember?.field?.validation?.length > 0 ||
+          durationMember?.field?.validation?.length > 0
+
         return (
           <Button
             icon={GenerateIcon}
             text="Update Vimeo Thumbnail"
             onClick={handleGenerate}
-            disabled={status.type === 'loading' || status.type === 'error'}
+            disabled={status.type === 'loading' || status.type === 'error' || isInvalid}
           />
         )
     }
