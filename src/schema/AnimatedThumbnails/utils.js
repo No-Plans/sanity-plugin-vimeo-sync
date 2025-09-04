@@ -5,6 +5,17 @@ import {getPluginConfig} from '../../helpers'
 // Please note that you can't create more than four sets of animated thumbnails for the same video.
 // check if the video has already animated thumbnails
 
+export const getVideo = async (uri) => {
+  const pluginConfig = getPluginConfig()
+  const vimeoAccessToken = pluginConfig?.accessToken
+  const res = await fetch(`https://api.vimeo.com${uri}`, {
+    headers: {
+      Authorization: `Bearer ${vimeoAccessToken}`,
+    },
+  })
+  return await res.json()
+}
+
 export const getVideoVersions = async (uri) => {
   //return all versions
   const pluginConfig = getPluginConfig()
@@ -56,6 +67,7 @@ export const setThumbnail = async (uri, time = 0) => {
       time: time,
     }),
   })
+  return await res.json()
 }
 
 export const startTrim = async (uri, start, end) => {

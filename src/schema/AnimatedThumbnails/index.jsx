@@ -37,7 +37,7 @@ export default defineField({
       description: 'Maximum duration in seconds',
       validation: (Rule) =>
         Rule.min(0)
-          .max(6)
+          .max(20)
           .custom((value, context, e) => {
             if (context.parent.startTime + value > context.document?.duration) {
               return 'Duration exceeds video length'

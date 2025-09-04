@@ -1,10 +1,11 @@
 import {useRef, useEffect, useCallback} from 'react'
 import {GenerateIcon} from '@sanity/icons'
 import {useSecrets} from '@sanity/studio-secrets'
+import {useClient} from 'sanity'
 import {Button, Card, Flex, Grid, Spinner, Text} from '@sanity/ui'
 import {MemberField, set, useFormValue} from 'sanity'
 import {namespace} from '../../constants'
-import {setPluginConfig} from '../../helpers'
+import {setPluginConfig, addKeys} from '../../helpers'
 import {useAnimatedThumbs} from './hooks'
 
 export function input(props) {
@@ -31,10 +32,13 @@ export function input(props) {
     }
   }, [secrets, loading])
 
+  const videoId = useFormValue(['_id'])
   const videoUri = useFormValue(['uri'])
   const thumbnails = useFormValue(['animatedThumbnails'])
   const srcset = useFormValue(['srcset'])
-  const preview = srcset.find((item) => item.rendition === '540p')
+  const preview = srcset.find(
+    (item) => item.rendition === '540p' || item.rendition === '320p' || item.rendition === '240p',
+  )
 
   const {status, generateCoverLoop} = useAnimatedThumbs(videoUri, thumbnails)
 
@@ -45,24 +49,27 @@ export function input(props) {
     (member) => member.kind === 'field' && member.name === 'duration',
   )
 
+  const client = useClient({apiVersion: '2023-05-03'})
+  const transaction = client.transaction()
+
   const handleGenerate = async () => {
     onChange([set([], ['thumbnails'])])
     const start = startTimeMember.field.value
     const duration = durationMember.field.value
-    const generatedItems = await generateCoverLoop(start, start + duration)
-    console.log('generated items', generatedItems)
-    // const itemsWithKeys = generatedItems.map((item) => {
-    //   const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
-    //   return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
-    // })
+    const generatedThumbnail = await generateCoverLoop(start, start + duration)
 
-    // const duration = itemsWithKeys[0]?.sizes[0]?.duration
-    // const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
-    // onChange([
-    //   set(itemsWithKeys, ['thumbnails']),
-    //   set(duration, ['duration']),
-    //   set(startTime, ['startTime']),
-    // ])
+    console.log('generatedThumbnail', generatedThumbnail)
+
+    try {
+      transaction.patch(videoId, {
+        set: {
+          pictures: addKeys(generatedThumbnail.sizes, 'link'),
+        },
+      })
+    } catch (e) {
+      console.error('Error saving thumbnail', e)
+    }
+    await transaction.commit()
   }
 
   const renderButton = () => {

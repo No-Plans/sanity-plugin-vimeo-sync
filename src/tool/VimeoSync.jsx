@@ -86,21 +86,9 @@ export const VimeoSyncView = (options) => {
             uri: video.uri,
             width: video.width,
           }
-          const existingThumbnails = await getVideoVersions(video.uri)
-          if (existingThumbnails?.length) {
-            const itemsWithKeys = existingThumbnails.map((item) => {
-              const sizesWithKey = item.sizes.map((size) => ({...size, _key: `size-${size.width}`}))
-              return {...item, sizes: sizesWithKey, _key: `thumb-${item.clip_uri}`}
-            })
 
-            const duration = itemsWithKeys[0]?.sizes[0]?.duration
-            const startTime = itemsWithKeys[0]?.sizes[0]?.startTime
-
-            videoObject.animatedThumbnails = {
-              startTime,
-              duration,
-            }
-          }
+          // Use createIfNotExists to handle new documents
+          transaction.createIfNotExists(videoObject)
 
           // Patch to update existing fields (don't overwrite animatedThumbnails)
           transaction.patch(videoObject._id, {
@@ -116,9 +104,6 @@ export const VimeoSyncView = (options) => {
               width: videoObject.width,
             },
           })
-
-          // Use createIfNotExists to handle new documents
-          transaction.createIfNotExists(videoObject)
 
           videosEntry.push(videoObject)
           // 300ms delay to prevent 429 error
